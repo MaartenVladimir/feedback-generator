@@ -1,0 +1,244 @@
+"""
+Step validator using symbolic equivalence checking.
+
+The core insight: instead of enumerating all correct patterns, we check
+whether the student's new expression/equation is algebraically equivalent
+to the previous one. SymPy handles this via simplification.
+
+For equations (balance method):
+  - Both the original and new equation must have the same solution set.
+  - We verify this by solving both and comparing solutions.
+  - We also check structural equivalence as a fast path.
+
+For expressions (expand/factor/simplify):
+  - The new expression must be algebraically identical to the original.
+  - Checked via: simplify(original - new) == 0
+"""
+
+from dataclasses import dataclass, field
+from enum import Enum, auto
+from typing import Optional, List, Set
+
+import sympy
+from sympy import (
+    Eq, Expr, Symbol, simplify, expand, factor,
+    solve, S, oo, zoo, nan, nsimplify
+)
+
+from .parser import x
+
+
+class StepStatus(Enum):
+    CORRECT = auto()
+    INCORRECT = auto()
+    PARSE_ERROR = auto()
+    EQUIVALENT_BUT_NO_PROGRESS = auto()  # valid but didn't move forward
+    COMPLETE = auto()  # problem is solved
+
+
+@dataclass
+class StepResult:
+    """Result of validating a single student step."""
+    status: StepStatus
+    is_correct: bool
+    message: str = ""
+    # What the student's step looks like canonically
+    canonical_form: str = ""
+    # If we detected what transformation they applied
+    transformation: Optional[str] = None
+    # If incorrect, diagnosed error (filled in by errors module)
+    error_diagnosis: Optional[str] = None
+    # Additional hints
+    hints: List[str] = field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Equivalence checking
+# ---------------------------------------------------------------------------
+
+def _expressions_equivalent(a: Expr, b: Expr) -> bool:
+    """Check if two expressions are algebraically equivalent."""
+    try:
+        diff = simplify(expand(a) - expand(b))
+        return diff == 0 or simplify(diff) == 0
+    except Exception:
+        return False
+
+
+def _equations_equivalent(eq1: Eq, eq2: Eq) -> bool:
+    """
+    Check if two equations have the same solution set.
+
+    Strategy:
+    1. Fast path: check if LHS-RHS of both simplify to the same thing.
+    2. Slow path: solve both and compare solution sets.
+    """
+    # Fast path: rewrite as LHS - RHS = 0 and compare
+    expr1 = eq1.lhs - eq1.rhs
+    expr2 = eq2.lhs - eq2.rhs
+    if _expressions_equivalent(expr1, expr2):
+        return True
+
+    # Check if one is a constant multiple of the other
+    try:
+        ratio = simplify(expr1 / expr2)
+        if ratio.is_number and ratio != 0:
+            return True
+    except Exception:
+        pass
+
+    # Slow path: compare solution sets
+    try:
+        sols1 = set(solve(eq1, x))
+        sols2 = set(solve(eq2, x))
+        if sols1 == sols2 and len(sols1) > 0:
+            return True
+    except Exception:
+        pass
+
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Completion checking
+# ---------------------------------------------------------------------------
+
+def _is_solved_equation(eq: Eq) -> bool:
+    """Check if equation is in the form x = <number> or <number> = x."""
+    lhs, rhs = eq.lhs, eq.rhs
+
+    # x = number
+    if lhs == x and rhs.is_number:
+        return True
+    # number = x
+    if rhs == x and lhs.is_number:
+        return True
+    return False
+
+
+def _is_fully_expanded(expr: Expr) -> bool:
+    """Check if expression has no unexpanded brackets."""
+    return expand(expr) == expr
+
+
+def _is_fully_factored(expr: Expr) -> bool:
+    """Check if expression is in factored form."""
+    return factor(expr) == expr
+
+
+# ---------------------------------------------------------------------------
+# Main validation entry points
+# ---------------------------------------------------------------------------
+
+def validate_equation_step(
+    prev_eq: Eq,
+    new_eq: Eq,
+) -> StepResult:
+    """
+    Validate a step in equation solving.
+
+    Checks:
+    1. Are the equations equivalent (same solution set)?
+    2. Is the new equation "solved" (x = number)?
+    """
+    equivalent = _equations_equivalent(prev_eq, new_eq)
+
+    if not equivalent:
+        return StepResult(
+            status=StepStatus.INCORRECT,
+            is_correct=False,
+            message="This step doesn't preserve the equation's solutions.",
+            canonical_form=str(new_eq),
+        )
+
+    if _is_solved_equation(new_eq):
+        return StepResult(
+            status=StepStatus.COMPLETE,
+            is_correct=True,
+            message="Correct! You've solved the equation.",
+            canonical_form=str(new_eq),
+        )
+
+    return StepResult(
+        status=StepStatus.CORRECT,
+        is_correct=True,
+        message="Correct step.",
+        canonical_form=str(new_eq),
+    )
+
+
+def validate_expression_step(
+    prev_expr: Expr,
+    new_expr: Expr,
+    goal: str = "expand",  # "expand", "factor", "simplify"
+) -> StepResult:
+    """
+    Validate a step in expression manipulation (expand/factor/simplify).
+    """
+    equivalent = _expressions_equivalent(prev_expr, new_expr)
+
+    if not equivalent:
+        return StepResult(
+            status=StepStatus.INCORRECT,
+            is_correct=False,
+            message="This expression is not equivalent to the previous one.",
+            canonical_form=str(new_expr),
+        )
+
+    # Check if we've reached the goal
+    is_complete = False
+    if goal == "expand":
+        is_complete = _is_fully_expanded(new_expr)
+    elif goal == "factor":
+        is_complete = _is_fully_factored(new_expr)
+    elif goal == "simplify":
+        is_complete = simplify(new_expr) == new_expr
+
+    if is_complete:
+        return StepResult(
+            status=StepStatus.COMPLETE,
+            is_correct=True,
+            message="Correct! The expression is fully " + goal + "ed.",
+            canonical_form=str(new_expr),
+        )
+
+    # Correct but not done yet - check if they actually made progress
+    if str(simplify(prev_expr)) == str(simplify(new_expr)):
+        return StepResult(
+            status=StepStatus.EQUIVALENT_BUT_NO_PROGRESS,
+            is_correct=True,
+            message="This is correct but hasn't changed the expression meaningfully.",
+            canonical_form=str(new_expr),
+        )
+
+    return StepResult(
+        status=StepStatus.CORRECT,
+        is_correct=True,
+        message="Correct step.",
+        canonical_form=str(new_expr),
+    )
+
+
+def validate_step(prev, new, goal: str = "solve") -> StepResult:
+    """
+    Unified validation: auto-detects equations vs expressions.
+
+    Parameters
+    ----------
+    prev : Eq or Expr
+        The previous state.
+    new : Eq or Expr
+        The student's new step.
+    goal : str
+        "solve" for equations, "expand"/"factor"/"simplify" for expressions.
+    """
+    if isinstance(prev, Eq) and isinstance(new, Eq):
+        return validate_equation_step(prev, new)
+    elif isinstance(prev, Expr) and isinstance(new, Expr):
+        return validate_expression_step(prev, new, goal=goal)
+    else:
+        return StepResult(
+            status=StepStatus.PARSE_ERROR,
+            is_correct=False,
+            message="Mismatched types: both steps must be equations or both expressions.",
+        )

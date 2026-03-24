@@ -34,6 +34,14 @@ class StepStatus(Enum):
     PARSE_ERROR = auto()
     EQUIVALENT_BUT_NO_PROGRESS = auto()  # valid but didn't move forward
     COMPLETE = auto()  # problem is solved
+    CORRECT_SUBOPTIMAL = auto()  # correct but strategically poor
+
+
+class StrategyRating(Enum):
+    """How well the student's step serves the overall goal."""
+    OPTIMAL = auto()          # Good move toward the goal
+    SUBOPTIMAL = auto()       # Correct but not the best path
+    COUNTERPRODUCTIVE = auto()  # Correct but actively moves away from goal
 
 
 @dataclass
@@ -46,10 +54,15 @@ class StepResult:
     canonical_form: str = ""
     # If we detected what transformation they applied
     transformation: Optional[str] = None
-    # If incorrect, diagnosed error (filled in by errors module)
+    # If incorrect: stable id of the matched ErrorChecker (for system logs)
+    error_id: Optional[str] = None
+    # If incorrect: human-readable diagnosis (filled in by errors module)
     error_diagnosis: Optional[str] = None
     # Additional hints
     hints: List[str] = field(default_factory=list)
+    # Strategic assessment (set by goal-level checkers)
+    strategy_rating: Optional[StrategyRating] = None
+    strategy_message: str = ""
 
 
 # ---------------------------------------------------------------------------

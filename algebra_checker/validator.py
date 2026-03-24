@@ -21,7 +21,7 @@ from typing import Optional, List, Set
 
 import sympy
 from sympy import (
-    Eq, Expr, Symbol, simplify, expand, factor,
+    Eq, Expr, Symbol, simplify, expand,
     solve, S, oo, zoo, nan, nsimplify
 )
 
@@ -129,16 +129,6 @@ def _is_solved_equation(eq: Eq) -> bool:
     return False
 
 
-def _is_fully_expanded(expr: Expr) -> bool:
-    """Check if expression has no unexpanded brackets."""
-    return expand(expr) == expr
-
-
-def _is_fully_factored(expr: Expr) -> bool:
-    """Check if expression is in factored form."""
-    return factor(expr) == expr
-
-
 # ---------------------------------------------------------------------------
 # Main validation entry points
 # ---------------------------------------------------------------------------
@@ -183,10 +173,12 @@ def validate_equation_step(
 def validate_expression_step(
     prev_expr: Expr,
     new_expr: Expr,
-    goal: str = "expand",  # "expand", "factor", "simplify"
 ) -> StepResult:
     """
-    Validate a step in expression manipulation (expand/factor/simplify).
+    Validate a step in expression manipulation.
+
+    Only checks algebraic equivalence — completion is goal-specific and
+    handled by the calling Goal subclass after this returns.
     """
     equivalent = _expressions_equivalent(prev_expr, new_expr)
 
@@ -198,24 +190,6 @@ def validate_expression_step(
             canonical_form=str(new_expr),
         )
 
-    # Check if we've reached the goal
-    is_complete = False
-    if goal == "expand":
-        is_complete = _is_fully_expanded(new_expr)
-    elif goal == "factor":
-        is_complete = _is_fully_factored(new_expr)
-    elif goal == "simplify":
-        is_complete = simplify(new_expr) == new_expr
-
-    if is_complete:
-        return StepResult(
-            status=StepStatus.COMPLETE,
-            is_correct=True,
-            message="Correct! The expression is fully " + goal + "ed.",
-            canonical_form=str(new_expr),
-        )
-
-    # Correct but not done yet - check if they actually made progress
     if str(simplify(prev_expr)) == str(simplify(new_expr)):
         return StepResult(
             status=StepStatus.EQUIVALENT_BUT_NO_PROGRESS,
@@ -232,9 +206,12 @@ def validate_expression_step(
     )
 
 
-def validate_step(prev, new, goal: str = "solve") -> StepResult:
+def validate_step(prev, new) -> StepResult:
     """
     Unified validation: auto-detects equations vs expressions.
+
+    Only checks correctness (equivalence). Completion and strategy
+    are handled by the calling Goal subclass.
 
     Parameters
     ----------
@@ -242,13 +219,11 @@ def validate_step(prev, new, goal: str = "solve") -> StepResult:
         The previous state.
     new : Eq or Expr
         The student's new step.
-    goal : str
-        "solve" for equations, "expand"/"factor"/"simplify" for expressions.
     """
     if isinstance(prev, Eq) and isinstance(new, Eq):
         return validate_equation_step(prev, new)
     elif isinstance(prev, Expr) and isinstance(new, Expr):
-        return validate_expression_step(prev, new, goal=goal)
+        return validate_expression_step(prev, new)
     else:
         return StepResult(
             status=StepStatus.PARSE_ERROR,

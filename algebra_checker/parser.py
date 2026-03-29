@@ -82,7 +82,7 @@ def parse_expr_safe(text: str) -> Expr:
     """
     preprocessed = _preprocess(text)
     try:
-        expr = parse_expr(preprocessed, transformations=_TRANSFORMS, local_dict={'x': x})
+        expr = parse_expr(preprocessed, transformations=_TRANSFORMS, local_dict={'x': x}, evaluate=False)
         return expr
     except Exception as e:
         raise ParseError(text, str(e))

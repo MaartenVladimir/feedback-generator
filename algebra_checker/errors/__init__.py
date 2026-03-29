@@ -1,8 +1,12 @@
 from .base import ErrorChecker
-from .equation_errors import sign_error_on_move, wrong_division
+from .template_checker import load_templates, TEMPLATES_DIR
+
+error_checkers, strategy_checks = load_templates(TEMPLATES_DIR)
 
 __all__ = [
     "ErrorChecker",
-    "sign_error_on_move",
-    "wrong_division"
+    "error_checkers",
+    "strategy_checks",
+    "load_templates",
+    "TEMPLATES_DIR",
 ]

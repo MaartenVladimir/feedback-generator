@@ -1,0 +1,10 @@
+{
+  "id": "distribution_error",
+  "type": "error",
+  "params": ["a", "b", "c"],
+  "prev_template": "a*(x+b) = c",
+  "new_template": "a*x + b = c",
+  "computed": {"ab": "a*b"},
+  "description": "Student removed brackets without multiplying the outer factor into all terms.",
+  "message": "When expanding {a}*(x+{b}) you must multiply every term inside by {a}. The result is {a}x + {ab} = {c}, not {a}x + {b} = {c}."
+}

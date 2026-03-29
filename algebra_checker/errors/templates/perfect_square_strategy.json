@@ -1,0 +1,10 @@
+{
+  "id": "perfect_square_expanded",
+  "type": "strategy",
+  "rating": "COUNTERPRODUCTIVE",
+  "params": ["a", "b"],
+  "prev_template": "(x+a)**2 = b",
+  "new_template": "x**2 + 2*a*x + a**2 = b",
+  "description": "Student expanded a perfect-square equation instead of taking the square root.",
+  "message": "This step is correct, but expanding loses a useful structure. The equation has the form (x+{a})\u00b2 = {b}. Taking the square root of both sides gives x+{a} = \u00b1\u221a{b}, which is faster than expanding."
+}

@@ -1,0 +1,10 @@
+{
+  "id": "sign_error_constant",
+  "type": "error",
+  "params": ["a", "b", "c"],
+  "prev_template": "c*x + a = b",
+  "new_template": "c*x = b + a",
+  "computed": {"correct_rhs": "b - a"},
+  "description": "Student moved a constant term across the equals sign without flipping its sign.",
+  "message": "When moving a term to the other side its sign must flip. The right side should become {correct_rhs}, not {b}+{a}."
+}

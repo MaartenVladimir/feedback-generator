@@ -1,0 +1,10 @@
+{
+  "id": "sign_error_x_term",
+  "type": "error",
+  "params": ["a", "b", "c", "d"],
+  "prev_template": "a*x + b = c*x + d",
+  "new_template": "(a+c)*x + b = d",
+  "computed": {"correct_coeff": "a - c"},
+  "description": "Student moved an x-term across the equals sign without flipping its sign.",
+  "message": "When moving a term to the other side its sign must flip. Moving {c}x from the right should subtract it from the left: the coefficient of x should become {correct_coeff}, not {a}+{c}."
+}

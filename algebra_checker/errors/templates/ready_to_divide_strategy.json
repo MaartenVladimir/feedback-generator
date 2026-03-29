@@ -1,0 +1,11 @@
+{
+  "id": "ready_to_divide_moved_x",
+  "type": "strategy",
+  "rating": "COUNTERPRODUCTIVE",
+  "params": ["a", "b"],
+  "prev_template": "a*x = b",
+  "new_template": "x = b - (a-1)*x",
+  "computed": {"answer": "b/a"},
+  "description": "Student moved x terms instead of dividing when the equation was already in ax=b form.",
+  "message": "This step is correct, but the equation was already in the form {a}x = {b}. Dividing both sides by {a} gives x = {answer} directly."
+}

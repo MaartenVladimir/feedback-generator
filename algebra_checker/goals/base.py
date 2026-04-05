@@ -56,10 +56,15 @@ class Goal(ABC):
 
     default_error_checks: list[ErrorChecker] = []
 
-    def __init__(self, extra_checks: list[ErrorChecker] | None = None):
+    def __init__(
+        self,
+        extra_checks: list[ErrorChecker] | None = None,
+        item_context: dict | None = None,
+    ):
         self.error_checks: list[ErrorChecker] = (
             self.default_error_checks + (extra_checks or [])
         )
+        self.item_context: dict = item_context or {}
 
     def diagnose_error(self, prev, new) -> tuple[Optional[str], str]:
         """

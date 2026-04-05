@@ -3,10 +3,7 @@ Goal: Solve an equation for x.
 
 All specific error and strategy patterns are defined as JSON templates in
 algebra_checker/errors/templates/. Adding a new pattern requires only a new
-.json file — no code changes here.
-
-A general "complexity increased" fallback remains in code because it is not
-expressible as a pair of specific equation templates.
+.json file
 """
 
 from sympy import Eq, expand
@@ -21,10 +18,6 @@ from .base import Goal
 from ..errors import error_checkers, strategy_checks
 
 
-# ---------------------------------------------------------------------------
-# Complexity metric — used only for the general fallback
-# ---------------------------------------------------------------------------
-
 def _term_count(eq: Eq) -> int:
     """Number of terms in the expanded LHS - RHS expression."""
     combined = expand(eq.lhs - eq.rhs)
@@ -37,10 +30,6 @@ def _student_expanded(prev_eq: Eq, new_eq: Eq) -> bool:
     """True if the new equation has strictly more terms than the previous."""
     return _term_count(new_eq) > _term_count(prev_eq)
 
-
-# ---------------------------------------------------------------------------
-# Strategy assessment
-# ---------------------------------------------------------------------------
 
 def _assess_strategy(prev_eq: Eq, new_eq: Eq, result: StepResult) -> StepResult:
     """
@@ -71,10 +60,6 @@ def _assess_strategy(prev_eq: Eq, new_eq: Eq, result: StepResult) -> StepResult:
     result.strategy_rating = StrategyRating.OPTIMAL
     return result
 
-
-# ---------------------------------------------------------------------------
-# Goal class
-# ---------------------------------------------------------------------------
 
 class SolveEquationGoal(Goal):
     """

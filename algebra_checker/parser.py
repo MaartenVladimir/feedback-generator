@@ -1,16 +1,10 @@
 """
 Parser for student-entered mathematical expressions and equations.
- 
-Handles common student notations:
-  - Implicit multiplication: 2x, 3(x+1)
-  - Fractions: 2/3x, (x+1)/(x-2)
-  - Equations with = sign
-  - Mixed numbers and decimals
 """
  
 import re
-from typing import Union, Tuple
- 
+from typing import Union, Tuple, List
+
 import sympy
 from sympy import (
     Symbol, Eq, sympify, Rational,
@@ -33,11 +27,6 @@ class ParseError(Exception):
         self.reason = reason
         super().__init__(f"Cannot parse '{raw_input}': {reason}")
  
- 
-# ---------------------------------------------------------------------------
-# Preprocessing: normalise student notation 
-# ---------------------------------------------------------------------------
- 
 def _preprocess(text: str) -> str:
     """Clean up student input into something SymPy can handle."""
     s = text.strip()
@@ -48,10 +37,6 @@ def _preprocess(text: str) -> str:
  
     # Replace ² and ³ with **2 and **3
     s = s.replace('²', '**2').replace('³', '**3')
- 
-    # Handle cases like "2x" -> "2*x", "3(x" -> "3*(x"
-    # SymPy's implicit_multiplication_application handles most of this,
-    # but we help with a few edge cases.
  
     # ")(": insert multiplication between adjacent parens
     s = re.sub(r'\)\s*\(', ')*(', s)
@@ -119,10 +104,26 @@ def parse_student_input(text: str) -> Union[Eq, Expr]:
     return parse_expr_safe(text)
  
  
-# ---------------------------------------------------------------------------
-# Convenience: extract LHS/RHS from equations
-# ---------------------------------------------------------------------------
- 
 def equation_sides(eq: Eq) -> Tuple[Expr, Expr]:
     """Return (lhs, rhs) of an equation."""
     return eq.lhs, eq.rhs
+
+
+_DISJUNCTION_RE = re.compile(r'∨|\s+(?:v|of)\s+')
+
+
+def is_disjunction(text: str) -> bool:
+    """Return True if text contains a logical-or separator between equations."""
+    return bool(_DISJUNCTION_RE.search(text.replace('==', '=')))
+
+
+def parse_disjunction(text: str) -> List[Eq]:
+    """
+    Parse a disjunction like 'x+3=0 v x-2=0' into a list of Eq objects.
+
+    Raises ParseError if any branch cannot be parsed as an equation.
+    """
+    parts = _DISJUNCTION_RE.split(text)
+    if len(parts) < 2:
+        raise ParseError(text, "No disjunction separator found")
+    return [parse_equation(part.strip()) for part in parts]

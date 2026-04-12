@@ -78,8 +78,20 @@ class DirectAnswerGoal(Goal):
                 canonical_form=str(expected_expr),
             )
 
+        for hint in self.item_context.get('wrong_answer_hints', []):
+            try:
+                hint_expr = parse_expr_safe(hint['if_answer'])
+                if _equivalent(student_expr, hint_expr):
+                    return StepResult(
+                        status=StepStatus.INCORRECT,
+                        is_correct=False,
+                        message=hint['message'],
+                    )
+            except Exception:
+                continue
+
         return StepResult(
             status=StepStatus.INCORRECT,
             is_correct=False,
-            message="That is not correct. Try again.",
+            message="Dat klopt niet. Probeer het nog eens.",
         )

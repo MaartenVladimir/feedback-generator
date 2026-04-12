@@ -141,6 +141,17 @@ def _resolve_params(spec: dict, rng: random.Random) -> dict[str, Any]:
 _PLACEHOLDER = re.compile(r"\{\{(\w+)(?::(\w+))?\}\}")
 
 
+def _render_value(val: Any, values: dict[str, Any]) -> Any:
+    """Recursively render {{param}} templates in a nested JSON-like value."""
+    if isinstance(val, str):
+        return _render(val, values)
+    if isinstance(val, list):
+        return [_render_value(v, values) for v in val]
+    if isinstance(val, dict):
+        return {k: _render_value(v, values) for k, v in val.items()}
+    return val
+
+
 def _render(template: str, values: dict[str, Any]) -> str:
     """
     Replace {{param}} and {{param:modifier}} placeholders.
@@ -197,15 +208,46 @@ def instantiate_item(item: dict, student_id: str) -> dict:
     values = _resolve_params(item["params"], rng)
 
     result = dict(item)
-    result["display"] = _render(item["display"], values)
-    result["sympy_str"] = _render(item["sympy_str"], values)
+
+    if "context" in item:
+        result["context"] = _render(item["context"], values)
+
+    if "display" in item:
+        result["display"] = _render(item["display"], values)
+    if "sympy_str" in item:
+        result["sympy_str"] = _render(item["sympy_str"], values)
 
     if "expected_answer" in item:
         result["expected_answer"] = _render(item["expected_answer"], values)
 
+    if "wrong_answer_hints" in item:
+        result["wrong_answer_hints"] = [
+            {**hint, "if_answer": _render(hint["if_answer"], values)}
+            for hint in item["wrong_answer_hints"]
+        ]
+
+    if "graph" in item:
+        result["graph"] = _render_value(item["graph"], values)
+
+    if "parts" in item:
+        rendered_parts = []
+        for part in item["parts"]:
+            rendered_part = dict(part)
+            rendered_part["display"] = _render(part["display"], values)
+            rendered_part["sympy_str"] = _render(part["sympy_str"], values)
+            if "expected_answer" in part:
+                rendered_part["expected_answer"] = _render(part["expected_answer"], values)
+            if "wrong_answer_hints" in part:
+                rendered_part["wrong_answer_hints"] = [
+                    {**hint, "if_answer": _render(hint["if_answer"], values)}
+                    for hint in part["wrong_answer_hints"]
+                ]
+            rendered_parts.append(rendered_part)
+        result["parts"] = rendered_parts
+
     result["_param_values"] = values
 
-    # Recurse into crisis sub-items 
+    # Recurse into crisis sub-items
     if "crisis_tuple" in item:
         tup = dict(item["crisis_tuple"])
         if "pre_crisis" in tup:

@@ -150,7 +150,7 @@ def validate_equation_step(
         return StepResult(
             status=StepStatus.INCORRECT,
             is_correct=False,
-            message="This step doesn't preserve the equation's solutions.",
+            message="Deze stap is incorrect.",
             canonical_form=str(new_eq),
         )
 
@@ -158,14 +158,14 @@ def validate_equation_step(
         return StepResult(
             status=StepStatus.COMPLETE,
             is_correct=True,
-            message="Correct! You've solved the equation.",
+            message="Correct! De vergelijking is opgelost!",
             canonical_form=str(new_eq),
         )
 
     return StepResult(
         status=StepStatus.CORRECT,
         is_correct=True,
-        message="Correct step.",
+        message="Correct!",
         canonical_form=str(new_eq),
     )
 

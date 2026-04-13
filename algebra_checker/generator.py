@@ -9,6 +9,13 @@ Parameter formats
 {"int": [lo, hi]}                      random integer in [lo, hi] inclusive
 {"int": [lo, hi], "step": k}           random multiple of k in [lo, hi]
 {"int": [lo, hi], "exclude": [v, ...]} integer in [lo, hi], never the listed values
+{"fraction": {"lcd": n}}               irreducible proper fraction p/q where q divides n
+                                       and gcd(p, q) = 1 — guarantees the denominator
+                                       never changes after SymPy simplification.
+                                       Optional: "negative": true  →  -p/q
+                                                 "exclude_noemer": [param, ...]  →  skip used denominators
+{"choices": [v, ...]}                  pick uniformly from the explicit list;
+                                       supports "exclude": [param, ...] to skip values
 "sympy_expression_string"              derived value evaluated with already-resolved
                                        params via SymPy — must appear after its deps
 
@@ -94,6 +101,7 @@ Example: direct answer — slope may be a fraction
 import hashlib
 import random
 import re
+from math import gcd
 from typing import Any
 
 from sympy import Integer, Rational, latex, sympify
@@ -122,10 +130,48 @@ def _resolve_params(spec: dict, rng: random.Random) -> dict[str, Any]:
             print(result, name)
             values[name] = int(result) if result == int(result) else result
 
+        elif isinstance(s, dict) and "fraction" in s:
+            spec    = s["fraction"]
+            lcd     = spec["lcd"]
+            neg     = spec.get("negative", False)
+            exclude_raw = spec.get("exclude_noemer", [])
+            exclude_q   = {int(values[e]) if isinstance(e, str) else e for e in exclude_raw}
+
+            # Denominators: divisors of lcd that are >= 2 and not excluded
+            divisors = [d for d in range(2, lcd + 1) if lcd % d == 0 and d not in exclude_q]
+            if not divisors:
+                raise ValueError(f"No valid denominator for fraction param '{name}' (lcd={lcd})")
+            q = rng.choice(divisors)
+
+            # Numerators: p in [1, q-1] coprime with q → fraction is irreducible by construction
+            valid_p = [p for p in range(1, q) if gcd(p, q) == 1]
+            p = rng.choice(valid_p)
+            values[name] = Rational(-p, q) if neg else Rational(p, q)
+
+        elif isinstance(s, dict) and "choices" in s:
+            exclude_raw = s.get("exclude", [])
+            exclude     = {values[e] if isinstance(e, str) else e for e in exclude_raw}
+            choices     = [values[c] if isinstance(c, str) else c
+                           for c in s["choices"] if c not in exclude]
+            if not choices:
+                raise ValueError(f"No valid choices for param '{name}'")
+            values[name] = rng.choice(choices)
+
         elif isinstance(s, dict) and "int" in s:
             lo, hi = s["int"]
+            # Check if bounds are sympy strings:
+            lo = values[lo] if isinstance(lo, str) else lo 
+            hi = values[hi] if isinstance(hi, str) else hi 
+
             step = s.get("step", 1)
-            exclude = set(s.get("exclude", []))
+            # Check if step is sympy string:
+            step = values[step] if isinstance(step, str) else step
+            
+            exclude_raw = set(s.get("exclude", []))
+
+            # Check if exclude is sympy strings:
+            exclude = map(lambda ex: values[ex] if isinstance(ex, str) else ex, exclude_raw)
+
             choices = [v for v in range(lo, hi + 1, step) if v not in exclude]
             if not choices:
                 raise ValueError(
@@ -195,6 +241,11 @@ def _render(template: str, values: dict[str, Any]) -> str:
             if isinstance(val, Rational) and val.q != 1:
                 return latex(val)
             return str(int(val) if val == int(val) else val)
+        if mod == "frac_term":
+            if isinstance(val, Rational) and val.q != 1:
+                return f"+ {latex(abs_val)}" if not is_negative else f"- {latex(abs_val)}"
+            val = str(int(abs_val) if abs_val == int(abs_val) else abs_val)
+            return f"+ {val}" if not is_negative else f"- {val}"
         # Default: raw value
         return str(val)
 

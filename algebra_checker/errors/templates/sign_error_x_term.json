@@ -4,7 +4,7 @@
   "params": ["a", "b", "c", "d"],
   "prev_template": "a*x + b = c*x + d",
   "new_template": "(a+c)*x + b = d",
-  "computed": {"correct_coeff": "a - c"},
+  "computed": {"correct_coeff": "a - c", "incorrect_coeff": "a + c"},
   "description": "Student moved an x-term across the equals sign without flipping its sign.",
-  "message": "When moving a term to the other side its sign must flip. Moving {c}x from the right should subtract it from the left: the coefficient of x should become {correct_coeff}, not {a}+{c}."
+  "message": "Als je een term met een x aan een kant weg wilt halen, dan moet je aan beide kanten hetzelfde doen. Dan krijg je dus {correct_coeff}x, niet {incorrect_coeff}x."
 }

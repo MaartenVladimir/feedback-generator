@@ -152,6 +152,9 @@ def _render_value(val: Any, values: dict[str, Any]) -> Any:
     return val
 
 
+_TERM_AFTER_SIGN = re.compile(r"[+\-]\s*\{\{\w+:term\}\}")
+
+
 def _render(template: str, values: dict[str, Any]) -> str:
     """
     Replace {{param}} and {{param:modifier}} placeholders.
@@ -162,9 +165,20 @@ def _render(template: str, values: dict[str, Any]) -> str:
     abs      absolute value (e.g. 5)
     term     sign + space + absolute value (e.g. + 5 or - 5)
              use this to append a term inline: {{a}}x {{b:term}} = {{c}}
+             NEVER precede :term with a literal + or -; it includes its own sign
     frac     LaTeX \frac{}{} if the value is a non-integer Rational,
              otherwise the plain integer string
+
+    Leading constants: use raw {{b}} — renders as -2 or 2, never +2
     """
+    if _TERM_AFTER_SIGN.search(template):
+        raise ValueError(
+            f"Template has a literal sign immediately before a :term placeholder — "
+            f":term already includes the sign.\n"
+            f"  template: {template!r}\n"
+            f"  Fix: '+ {{{{b:term}}}}' → '{{{{b:term}}}}',  '- {{{{b:term}}}}' → '{{{{b:term}}}}'"
+        )
+
     def replace(m: re.Match) -> str:
         name = m.group(1)
         mod = m.group(2)

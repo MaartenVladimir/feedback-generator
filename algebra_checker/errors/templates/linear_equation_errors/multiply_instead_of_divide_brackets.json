@@ -1,0 +1,10 @@
+{
+  "id": "lineq_divide_instead_multiply_brackets",
+  "type": "error",
+  "params": ["a", "b", "c"],
+  "prev_template": "a(x + b) = c",
+  "new_template": "x + b = c * a",
+  "computed": {"correct_rhs": "c / a", "incorrect_rhs": "a * c"},
+  "description": "Student divides instead of multiplies a coefficient",
+  "message": "Als je een getal weg wilt delen aan de ene kant van de vergelijking, dan moet je de andere kant van de vergelijking delen door hetzelfde getal! Het wordt dan: {correct_rhs}, niet {incorrect_rhs}."
+}

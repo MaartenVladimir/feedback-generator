@@ -1,0 +1,10 @@
+{
+  "id": "lineq_division_sign_error",
+  "type": "error",
+  "params": ["a", "b"],
+  "prev_template": "a*x = b",
+  "new_template": "x = -(b/a)",
+  "computed": {"correct_rhs": "b/a", "incorrect_rhs": "-(b/a)"},
+  "description": "Student divided a coefficient with the wrong sign",
+  "message": "Als je een negatief getal weg wilt delen, dan moet jij aan beide kanten delen door dat negatieve getal. De andere kant wordt dan {correct_rhs}, niet {incorrect_rhs}."
+}

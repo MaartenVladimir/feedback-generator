@@ -1,5 +1,5 @@
 {
-  "id": "sign_error_constant",
+  "id": "lineq_constant_sign_error",
   "type": "error",
   "params": ["a", "b", "c"],
   "prev_template": "c*x + a = b",

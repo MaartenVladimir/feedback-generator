@@ -1,0 +1,10 @@
+{
+  "id": "lineq_division_one_side",
+  "type": "error",
+  "params": ["a", "b", "c"],
+  "prev_template": "c*(x + a) = b",
+  "new_template": "x + a = b",
+  "computed": {"correct_rhs": "b / c", "incorrect_rhs": "b"},
+  "description": "Student divides constant on just one side of the equation",
+  "message": "Als je een getal weg wilt delen aan de ene kant van de vergelijking, dan moet je de andere kant van de vergelijking delen door hetzelfde getal! Het wordt dan: {correct_rhs}, niet {incorrect_rhs}."
+}

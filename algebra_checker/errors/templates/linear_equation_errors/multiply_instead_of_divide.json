@@ -1,9 +1,10 @@
 {
-  "id": "lineq_divide_instead_multiply_no_brackets",
+  "id": "lineq_divide_instead_multiply",
   "type": "error",
-  "params": ["a", "b"],
-  "prev_template": "ax = b",
-  "new_template": "x = b * a",
+  "scalar_params": ["a", "b"],
+  "expr_params": ["X"],
+  "prev_template": "aX = b",
+  "new_template": "X = b * a",
   "computed": {"correct_rhs": "b / a", "incorrect_rhs": "b * a"},
   "description": "Student divides instead of multiplies a coefficient",
   "message": "Als je een getal weg wilt delen aan de ene kant van de vergelijking, dan moet je de andere kant van de vergelijking delen door hetzelfde getal! Het wordt dan: {correct_rhs}, niet {incorrect_rhs}."

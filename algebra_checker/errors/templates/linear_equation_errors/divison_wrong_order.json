@@ -1,0 +1,11 @@
+{
+  "id": "lineq_divide_instead_multiply",
+  "type": "error",
+  "scalar_params": ["a", "b"],
+  "expr_params": ["X"],
+  "prev_template": "aX = b",
+  "new_template": "X = (a/b)",
+  "computed": {"correct_rhs": "b / a", "incorrect_rhs": "a / b", "denominator": "a", "numerator": "b "},
+  "description": "Student divides instead of multiplies a coefficient",
+  "message": "Als je een getal weg wilt delen aan de ene kant van de vergelijking, dan moet je de andere kant van de vergelijking delen door hetzelfde getal! Je deelt dus beide kanten door {denominator}, niet door {numerator}."
+}

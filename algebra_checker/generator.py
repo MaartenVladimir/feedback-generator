@@ -135,7 +135,7 @@ def _resolve_params(spec: dict, rng: random.Random) -> dict[str, Any]:
             lcd     = spec["lcd"]
             neg     = spec.get("negative", False)
             exclude_raw = spec.get("exclude_noemer", [])
-            exclude_q   = {int(values[e]) if isinstance(e, str) else e for e in exclude_raw}
+            exclude_q   = {int(values[e].q) if isinstance(e, str) and hasattr(values[e], 'q') else (int(values[e]) if isinstance(e, str) else e) for e in exclude_raw}
 
             # Denominators: divisors of lcd that are >= 2 and not excluded
             divisors = [d for d in range(2, lcd + 1) if lcd % d == 0 and d not in exclude_q]

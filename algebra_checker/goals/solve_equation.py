@@ -52,8 +52,7 @@ def _assess_strategy(prev_eq: Eq, new_eq: Eq, result: StepResult) -> StepResult:
     if _student_expanded(prev_eq, new_eq):
         result.strategy_rating  = StrategyRating.SUBOPTIMAL
         result.strategy_message = (
-            "This step is correct, but expanding has increased the number of terms. "
-            "Consider whether there is a structural shortcut available."
+            "Deze stap klopt, maar er is misschien een snellere manier."
         )
         return result
 
@@ -76,7 +75,7 @@ class SolveEquationGoal(Goal):
 
     @property
     def description(self) -> str:
-        return "Solve the equation for x"
+        return "Een vergelijking oplossen."
 
     def check_step(self, prev_raw: str, new_raw: str) -> StepResult:
         # 1. Parse
@@ -86,7 +85,7 @@ class SolveEquationGoal(Goal):
             return StepResult(
                 status=StepStatus.PARSE_ERROR,
                 is_correct=False,
-                message=f"Could not parse previous step: {e.reason}",
+                message=f"Er is een probleem met je antwoord: {e.reason}",
             )
         try:
             new_eq = parse_equation(new_raw)
@@ -94,7 +93,7 @@ class SolveEquationGoal(Goal):
             return StepResult(
                 status=StepStatus.PARSE_ERROR,
                 is_correct=False,
-                message=f"Could not parse your step: {e.reason}",
+                message=f"Er is een probleem met je antwoord: {e.reason}",
             )
 
         # 2. Correctness check

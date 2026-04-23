@@ -100,10 +100,12 @@ def _equations_equivalent(eq1: Eq, eq2: Eq) -> bool:
     except Exception:
         pass
 
-    # Slow path: compare solution sets
+    # Slow path: compare solution sets (variable-agnostic)
     try:
-        sols1 = set(solve(eq1, x))
-        sols2 = set(solve(eq2, x))
+        var_syms = eq1.free_symbols | eq2.free_symbols
+        var = next(iter(var_syms)) if len(var_syms) == 1 else x
+        sols1 = set(solve(eq1, var))
+        sols2 = set(solve(eq2, var))
         if sols1 == sols2 and len(sols1) > 0:
             return True
     except Exception:
@@ -117,14 +119,12 @@ def _equations_equivalent(eq1: Eq, eq2: Eq) -> bool:
 # ---------------------------------------------------------------------------
 
 def _is_solved_equation(eq: Eq) -> bool:
-    """Check if equation is in the form x = <number> or <number> = x."""
+    """Check if equation is in the form var = <number> or <number> = var."""
     lhs, rhs = eq.lhs, eq.rhs
 
-    # x = number
-    if lhs == x and rhs.is_number:
+    if lhs.is_Symbol and rhs.is_number:
         return True
-    # number = x
-    if rhs == x and lhs.is_number:
+    if rhs.is_Symbol and lhs.is_number:
         return True
     return False
 
@@ -158,14 +158,14 @@ def validate_equation_step(
         return StepResult(
             status=StepStatus.COMPLETE,
             is_correct=True,
-            message="Correct! De vergelijking is opgelost!",
+            message="Juist! De vergelijking is opgelost!",
             canonical_form=str(new_eq),
         )
 
     return StepResult(
         status=StepStatus.CORRECT,
         is_correct=True,
-        message="Correct!",
+        message="Juist!",
         canonical_form=str(new_eq),
     )
 
@@ -186,7 +186,7 @@ def validate_expression_step(
         return StepResult(
             status=StepStatus.INCORRECT,
             is_correct=False,
-            message="This expression is not equivalent to the previous one.",
+            message="Er zit in een fout in je antwoord.",
             canonical_form=str(new_expr),
         )
 
@@ -194,14 +194,14 @@ def validate_expression_step(
         return StepResult(
             status=StepStatus.EQUIVALENT_BUT_NO_PROGRESS,
             is_correct=True,
-            message="This is correct but hasn't changed the expression meaningfully.",
+            message="Je stap klopt. Maar brengt je nog niet dichterbij de oplossing.",
             canonical_form=str(new_expr),
         )
 
     return StepResult(
         status=StepStatus.CORRECT,
         is_correct=True,
-        message="Correct step.",
+        message="Juist!",
         canonical_form=str(new_expr),
     )
 
@@ -228,5 +228,5 @@ def validate_step(prev, new) -> StepResult:
         return StepResult(
             status=StepStatus.PARSE_ERROR,
             is_correct=False,
-            message="Mismatched types: both steps must be equations or both expressions.",
+            message="Er is een probleem met je antwoord.",
         )

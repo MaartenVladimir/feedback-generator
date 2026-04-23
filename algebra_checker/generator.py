@@ -126,6 +126,7 @@ def _resolve_params(spec: dict, rng: random.Random) -> dict[str, Any]:
         if isinstance(s, str):
             subs = {k: Integer(v) if isinstance(v, int) else v
                     for k, v in values.items()}
+            print(s, subs)
             result = sympify(s).subs(subs)
             print(result, name)
             values[name] = int(result) if result == int(result) else result
@@ -169,8 +170,7 @@ def _resolve_params(spec: dict, rng: random.Random) -> dict[str, Any]:
             
             exclude_raw = set(s.get("exclude", []))
 
-            # Check if exclude is sympy strings:
-            exclude = map(lambda ex: values[ex] if isinstance(ex, str) else ex, exclude_raw)
+            exclude = {values[ex] if isinstance(ex, str) else ex for ex in exclude_raw}
 
             choices = [v for v in range(lo, hi + 1, step) if v not in exclude]
             if not choices:

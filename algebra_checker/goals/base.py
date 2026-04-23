@@ -26,8 +26,8 @@ from ..validator import StepResult
 from ..errors.base import ErrorChecker
 
 _FALLBACK_MESSAGE = (
-    "This step does not preserve the equation's solutions. "
-    "Check each operation carefully."
+    "Deze stap is niet correct. "
+    "Probeer het nog eens."
 )
 
 

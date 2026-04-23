@@ -1,10 +1,11 @@
 {
   "id": "lineq_dropped_constant",
   "type": "error",
-  "params": ["a", "b", "c"],
-  "prev_template": "a*x + b = c",
-  "new_template": "a*x = c",
-  "computed": {"correct_rhs": "c - b", "incorrect_rhs": "c"},
+  "scalar_params": ["b"],
+  "expr_params": ["Expr", "E"],
+  "prev_template": "Expr + b = E",
+  "new_template": "Expr = E",
+  "computed": {"correct_rhs": "E - b", "incorrect_rhs": "E"},
   "description": "Student forgot to apply same substraction / addition on both sides",
   "message": "Als je een getal optelt of aftrekt aan een kant van de vergelijking, dan moet je dat aan de andere kant ook doen. De andere kant wordt dan {correct_rhs}, niet {incorrect_rhs}."
 }

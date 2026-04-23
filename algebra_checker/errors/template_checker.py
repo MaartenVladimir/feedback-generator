@@ -28,7 +28,7 @@ import json
 import os
 from typing import Optional, Tuple, List, Callable
 
-from sympy import symbols, solve, expand, Eq, Poly, simplify, Wild
+from sympy import symbols, solve, expand, Eq, Poly, simplify, Wild, latex
 from sympy.parsing.sympy_parser import (
     parse_expr,
     standard_transformations,
@@ -172,7 +172,8 @@ def _build_message(message_template: str, solved: dict,
         try:
             expr = parse_expr(expr_str, local_dict=param_syms,
                               transformations=_TRANSFORMS)
-            named[name] = simplify(expr.subs(solved))
+            val = simplify(expr.subs(solved))
+            named[name] = f'\\({latex(val)}\\)'
         except Exception:
             named[name] = '?'
 

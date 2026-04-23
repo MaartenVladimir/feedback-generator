@@ -108,7 +108,7 @@ class SolveQuadraticEquationGoal(Goal):
             return StepResult(
                 status=StepStatus.INCORRECT,
                 is_correct=False,
-                message=diagnosis or "This step does not preserve the equation's solutions. Check each branch carefully.",
+                message=diagnosis or "Deze stap is incorrect. Probeer het nog eens.",
                 error_id=error_id,
                 error_diagnosis=diagnosis,
             )

@@ -100,10 +100,12 @@ def _equations_equivalent(eq1: Eq, eq2: Eq) -> bool:
     except Exception:
         pass
 
-    # Slow path: compare solution sets
+    # Slow path: compare solution sets (variable-agnostic)
     try:
-        sols1 = set(solve(eq1, x))
-        sols2 = set(solve(eq2, x))
+        var_syms = eq1.free_symbols | eq2.free_symbols
+        var = next(iter(var_syms)) if len(var_syms) == 1 else x
+        sols1 = set(solve(eq1, var))
+        sols2 = set(solve(eq2, var))
         if sols1 == sols2 and len(sols1) > 0:
             return True
     except Exception:
@@ -117,14 +119,12 @@ def _equations_equivalent(eq1: Eq, eq2: Eq) -> bool:
 # ---------------------------------------------------------------------------
 
 def _is_solved_equation(eq: Eq) -> bool:
-    """Check if equation is in the form x = <number> or <number> = x."""
+    """Check if equation is in the form var = <number> or <number> = var."""
     lhs, rhs = eq.lhs, eq.rhs
 
-    # x = number
-    if lhs == x and rhs.is_number:
+    if lhs.is_Symbol and rhs.is_number:
         return True
-    # number = x
-    if rhs == x and lhs.is_number:
+    if rhs.is_Symbol and lhs.is_number:
         return True
     return False
 

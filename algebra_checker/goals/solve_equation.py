@@ -52,8 +52,7 @@ def _assess_strategy(prev_eq: Eq, new_eq: Eq, result: StepResult) -> StepResult:
     if _student_expanded(prev_eq, new_eq):
         result.strategy_rating  = StrategyRating.SUBOPTIMAL
         result.strategy_message = (
-            "This step is correct, but expanding has increased the number of terms. "
-            "Consider whether there is a structural shortcut available."
+            "Deze stap klopt, maar er is misschien een snellere manier."
         )
         return result
 

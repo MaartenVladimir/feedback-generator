@@ -73,7 +73,7 @@ class SolveQuadraticEquationGoal(Goal):
 
     @property
     def description(self) -> str:
-        return "Solve the quadratic equation for x"
+        return "Los de kwadratische vergelijking op."
 
     def check_step(self, prev_raw: str, new_raw: str) -> StepResult:
         # 1. Parse
@@ -124,7 +124,7 @@ class SolveQuadraticEquationGoal(Goal):
             return StepResult(
                 status=StepStatus.COMPLETE,
                 is_correct=True,
-                message="Correct! You've solved the equation.",
+                message="Correct! Je hebt de vergelijking opgelost.",
             )
 
         # 4. Strategy assessment — only for single-equation steps
@@ -145,5 +145,5 @@ class SolveQuadraticEquationGoal(Goal):
         return StepResult(
             status=StepStatus.CORRECT,
             is_correct=True,
-            message="Correct step.",
+            message="Juist!",
         )

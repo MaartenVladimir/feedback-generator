@@ -158,14 +158,14 @@ def validate_equation_step(
         return StepResult(
             status=StepStatus.COMPLETE,
             is_correct=True,
-            message="Correct! De vergelijking is opgelost!",
+            message="Juist! De vergelijking is opgelost!",
             canonical_form=str(new_eq),
         )
 
     return StepResult(
         status=StepStatus.CORRECT,
         is_correct=True,
-        message="Correct!",
+        message="Juist!",
         canonical_form=str(new_eq),
     )
 
@@ -186,7 +186,7 @@ def validate_expression_step(
         return StepResult(
             status=StepStatus.INCORRECT,
             is_correct=False,
-            message="This expression is not equivalent to the previous one.",
+            message="Er zit in een fout in je antwoord.",
             canonical_form=str(new_expr),
         )
 
@@ -194,14 +194,14 @@ def validate_expression_step(
         return StepResult(
             status=StepStatus.EQUIVALENT_BUT_NO_PROGRESS,
             is_correct=True,
-            message="This is correct but hasn't changed the expression meaningfully.",
+            message="Je stap klopt. Maar brengt je nog niet dichterbij de oplossing.",
             canonical_form=str(new_expr),
         )
 
     return StepResult(
         status=StepStatus.CORRECT,
         is_correct=True,
-        message="Correct step.",
+        message="Juist!",
         canonical_form=str(new_expr),
     )
 
@@ -228,5 +228,5 @@ def validate_step(prev, new) -> StepResult:
         return StepResult(
             status=StepStatus.PARSE_ERROR,
             is_correct=False,
-            message="Mismatched types: both steps must be equations or both expressions.",
+            message="Er is een probleem met je antwoord.",
         )

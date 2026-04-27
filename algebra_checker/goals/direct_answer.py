@@ -47,7 +47,7 @@ class DirectAnswerGoal(Goal):
 
     @property
     def description(self) -> str:
-        return "Fill in the correct answer"
+        return "Vul het juiste antwoord in."
 
     def check_step(self, prev_raw: str, new_raw: str) -> StepResult:
         expected_raw = self.item_context.get('expected_answer', '').strip()
@@ -55,7 +55,7 @@ class DirectAnswerGoal(Goal):
             return StepResult(
                 status=StepStatus.PARSE_ERROR,
                 is_correct=False,
-                message="This question has no expected answer configured.",
+                message="Deze vraag heeft geen antwoord.",
             )
 
         try:
@@ -80,7 +80,7 @@ class DirectAnswerGoal(Goal):
             return StepResult(
                 status=StepStatus.COMPLETE,
                 is_correct=True,
-                message="Correct!",
+                message="Juist!",
                 canonical_form=str(expected_expr),
             )
 

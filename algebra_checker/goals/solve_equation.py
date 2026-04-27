@@ -84,7 +84,7 @@ class SolveEquationGoal(Goal):
 
     @property
     def description(self) -> str:
-        return "Solve the equation for x"
+        return "Een vergelijking oplossen."
 
     def check_step(self, prev_raw: str, new_raw: str) -> StepResult:
         # 1. Parse

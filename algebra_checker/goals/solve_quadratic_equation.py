@@ -64,6 +64,12 @@ class SolveQuadraticEquationGoal(Goal):
     """
 
     default_error_checks = error_checkers
+    input_hint = (
+        r"\begin{array}{l}"
+        r"\text{Voer de twee oplossingen in met } \vee \text{ ertussen, bijv.:}\\[6pt]"
+        r"x = -3 \vee x = 5"
+        r"\end{array}"
+    )
 
     @property
     def description(self) -> str:
@@ -77,7 +83,7 @@ class SolveQuadraticEquationGoal(Goal):
             return StepResult(
                 status=StepStatus.PARSE_ERROR,
                 is_correct=False,
-                message=f"Could not parse previous step: {e.reason}",
+                message=f"Er is iets mis met je antwoord: {e.reason}",
             )
         try:
             new = _parse_step(new_raw)
@@ -85,7 +91,7 @@ class SolveQuadraticEquationGoal(Goal):
             return StepResult(
                 status=StepStatus.PARSE_ERROR,
                 is_correct=False,
-                message=f"Could not parse your step: {e.reason}",
+                message=f"Er is iets mis met je antwoord: {e.reason}",
             )
 
         # 2. Compare solution sets
@@ -96,7 +102,7 @@ class SolveQuadraticEquationGoal(Goal):
             return StepResult(
                 status=StepStatus.PARSE_ERROR,
                 is_correct=False,
-                message="Could not evaluate the solution set of your step.",
+                message="Er is iets mis met je antwoord",
             )
 
         if prev_sols != new_sols:

@@ -266,6 +266,10 @@ def instantiate_item(item: dict, student_id: str) -> dict:
     if they carry their own 'params' key.
     """
     if "params" not in item:
+        if isinstance(item.get("context"), list):
+            result = dict(item)
+            result["context"] = ' '.join(item["context"])
+            return result
         return item
 
     seed = _item_seed(student_id, item["id"])
@@ -275,7 +279,8 @@ def instantiate_item(item: dict, student_id: str) -> dict:
     result = dict(item)
 
     if "context" in item:
-        result["context"] = _render(item["context"], values)
+        ctx = item["context"]
+        result["context"] = ' '.join(_render(c, values) for c in ctx) if isinstance(ctx, list) else _render(ctx, values)
 
     if "display" in item:
         result["display"] = _render(item["display"], values)
@@ -287,7 +292,7 @@ def instantiate_item(item: dict, student_id: str) -> dict:
 
     if "wrong_answer_hints" in item:
         result["wrong_answer_hints"] = [
-            {**hint, "if_answer": _render(hint["if_answer"], values)}
+            {**hint, "if_answer": _render(hint["if_answer"], values)} if "if_answer" in hint else hint
             for hint in item["wrong_answer_hints"]
         ]
 
@@ -304,7 +309,7 @@ def instantiate_item(item: dict, student_id: str) -> dict:
                 rendered_part["expected_answer"] = _render(part["expected_answer"], values)
             if "wrong_answer_hints" in part:
                 rendered_part["wrong_answer_hints"] = [
-                    {**hint, "if_answer": _render(hint["if_answer"], values)}
+                    {**hint, "if_answer": _render(hint["if_answer"], values)} if "if_answer" in hint else hint
                     for hint in part["wrong_answer_hints"]
                 ]
             rendered_parts.append(rendered_part)

@@ -55,6 +55,7 @@ class Goal(ABC):
     """
 
     default_error_checks: list[ErrorChecker] = []
+    input_hint: str | None = None
 
     def __init__(
         self,

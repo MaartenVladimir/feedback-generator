@@ -71,6 +71,15 @@ class SolveEquationGoal(Goal):
       - error diagnosis driven by JSON error templates
     """
 
+    input_hint = (
+        r"\begin{array}{l}"
+        r"\text{Voer je oplossing stap voor stap in.}\\[6pt]"
+        r"3x + 6 = 12 \\"
+        r"3x = 6 \\"
+        r"x = 2"
+        r"\end{array}"
+    )
+
     default_error_checks = error_checkers
 
     @property
@@ -85,7 +94,7 @@ class SolveEquationGoal(Goal):
             return StepResult(
                 status=StepStatus.PARSE_ERROR,
                 is_correct=False,
-                message=f"Could not parse previous step: {e.reason}",
+                message=f"Er is iets mis met je antwoord: {e.reason}",
             )
         try:
             new_eq = parse_equation(new_raw)
@@ -93,7 +102,7 @@ class SolveEquationGoal(Goal):
             return StepResult(
                 status=StepStatus.PARSE_ERROR,
                 is_correct=False,
-                message=f"Could not parse your step: {e.reason}",
+                message=f"Er is iets mis met je antwoord: {e.reason}",
             )
 
         # 2. Correctness check

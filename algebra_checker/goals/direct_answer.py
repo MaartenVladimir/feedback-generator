@@ -38,6 +38,12 @@ class DirectAnswerGoal(Goal):
     """
 
     default_error_checks = []  # no step-level error patterns apply here
+    input_hint = (
+        r"\begin{array}{l}"
+        r"\text{Vul alleen het eindantwoord in.}\\"
+        r"\text{bijvoorbeeld: } \quad 3 \text{ of  } \dfrac{3}{4}"
+        r"\end{array}"
+    )
 
     @property
     def description(self) -> str:
@@ -58,7 +64,7 @@ class DirectAnswerGoal(Goal):
             return StepResult(
                 status=StepStatus.PARSE_ERROR,
                 is_correct=False,
-                message=f"Could not parse your answer: {e.reason}",
+                message=f"Er is iets mis met je antwoord: {e.reason}",
             )
 
         try:
@@ -67,7 +73,7 @@ class DirectAnswerGoal(Goal):
             return StepResult(
                 status=StepStatus.PARSE_ERROR,
                 is_correct=False,
-                message="Question configuration error: expected answer could not be parsed.",
+                message="Er is iets mis met deze vraag. Geef dit door aan je docent.",
             )
 
         if _equivalent(student_expr, expected_expr):
@@ -79,6 +85,12 @@ class DirectAnswerGoal(Goal):
             )
 
         for hint in self.item_context.get('wrong_answer_hints', []):
+            if 'if_answer' not in hint:
+                return StepResult(
+                    status=StepStatus.INCORRECT,
+                    is_correct=False,
+                    message=hint['message'],
+                )
             try:
                 hint_expr = parse_expr_safe(hint['if_answer'])
                 if _equivalent(student_expr, hint_expr):

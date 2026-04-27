@@ -30,9 +30,9 @@ Error detection
 Wrong sign when combining x-terms or constant terms (see expression_errors.py).
 """
 
-from sympy import Add, expand, simplify as sym_simplify, Symbol
+from sympy import Add, expand, simplify as sym_simplify, Symbol, Pow
 
-from ..parser import ParseError, parse_equation
+from ..parser import ParseError, parse_equation, parse_expr_safe
 from ..validator import StepResult, StepStatus
 from .base import Goal
 from ..errors.expression_errors import wrong_sign_combining_x, wrong_sign_combining_const
@@ -62,13 +62,21 @@ def _term_count(expr) -> int:
 
 def _is_fully_simplified(expr) -> bool:
     """
-    True when the expression contains no combinable like terms.
+    True when the expression contains no combinable like terms and no
+    unevaluated numeric operations.
 
-    Strategy: if SymPy's expand() (which combines like terms) produces a
-    result with the same number of terms as the student's input, there is
-    nothing left to combine.
+    For symbolic expressions: done when expand() produces the same number
+    of terms (no like terms left to combine).
+    For purely numeric expressions: done only when the result is an atomic
+    number — e.g. 9 is done, but (7-4)**2 or 3**2 or 36-3 are not.
     """
-    return _term_count(expr) == _term_count(expand(expr))
+    if _term_count(expr) != _term_count(expand(expr)):
+        return False
+    if expr.is_number:
+        if _term_count(expr) > 1:  # unevaluated sum like 3 + 12
+            return False
+        return not any(n.exp.is_positive for n in expr.atoms(Pow))
+    return True
 
 
 def _extract_rhs(eq, raw: str):
@@ -85,6 +93,16 @@ def _extract_rhs(eq, raw: str):
     raise ParseError(raw, "Verwacht een vergelijking van de vorm  <variabele> = <uitdrukking>")
 
 
+def _parse_step(raw: str):
+    """Parse a step as either 'y = expr' or a bare expression."""
+    print(raw)
+    if '=' in raw.replace('==', ''):
+        eq = parse_equation(raw)
+        print(eq)
+        return _extract_rhs(eq, raw)
+    return parse_expr_safe(raw)
+
+
 # ---------------------------------------------------------------------------
 # Goal
 # ---------------------------------------------------------------------------
@@ -99,6 +117,13 @@ class SimplifyExpressionGoal(Goal):
     """
 
     default_error_checks = [wrong_sign_combining_x, wrong_sign_combining_const]
+    input_hint = (
+        r"\begin{array}{l}"
+        r"\text{Voer elke stap in.}\\[6pt]"
+        r"y = 5x + 4x - 6 \\"
+        r"y = 9x - 6"
+        r"\end{array}"
+    )
 
     @property
     def description(self) -> str:
@@ -114,9 +139,9 @@ class SimplifyExpressionGoal(Goal):
         return None, _FALLBACK_INCORRECT
 
     def check_step(self, prev_raw: str, new_raw: str) -> StepResult:
-        # 1. Parse both steps as  y = <expr>  equations
+        # 1. Parse both steps (accepts  y = <expr>  or a bare expression)
         try:
-            prev_eq = parse_equation(prev_raw)
+            prev_rhs = _parse_step(prev_raw)
         except ParseError as e:
             return StepResult(
                 status=StepStatus.PARSE_ERROR,
@@ -124,23 +149,12 @@ class SimplifyExpressionGoal(Goal):
                 message=f"Kan de vorige stap niet lezen: {e.reason}",
             )
         try:
-            new_eq = parse_equation(new_raw)
+            new_rhs = _parse_step(new_raw)
         except ParseError as e:
             return StepResult(
                 status=StepStatus.PARSE_ERROR,
                 is_correct=False,
                 message=f"Kan jouw stap niet lezen: {e.reason}",
-            )
-
-        # 2. Extract the expression side (RHS of  y = <expr>)
-        try:
-            prev_rhs = _extract_rhs(prev_eq, prev_raw)
-            new_rhs  = _extract_rhs(new_eq,  new_raw)
-        except ParseError as e:
-            return StepResult(
-                status=StepStatus.PARSE_ERROR,
-                is_correct=False,
-                message=e.reason,
             )
 
         # 3. Correctness: is the new expression equivalent to the previous one?

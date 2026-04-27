@@ -146,7 +146,7 @@ class SimplifyExpressionGoal(Goal):
             return StepResult(
                 status=StepStatus.PARSE_ERROR,
                 is_correct=False,
-                message=f"Kan de vorige stap niet lezen: {e.reason}",
+                message=f"Er is iets mis met je invoer.",
             )
         try:
             new_rhs = _parse_step(new_raw)
@@ -154,7 +154,7 @@ class SimplifyExpressionGoal(Goal):
             return StepResult(
                 status=StepStatus.PARSE_ERROR,
                 is_correct=False,
-                message=f"Kan jouw stap niet lezen: {e.reason}",
+                message=f"Er is iets mis met je invoer.",
             )
 
         # 3. Correctness: is the new expression equivalent to the previous one?

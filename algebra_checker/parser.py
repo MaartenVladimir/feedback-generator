@@ -25,7 +25,7 @@ class ParseError(Exception):
     def __init__(self, raw_input: str, reason: str = ""):
         self.raw_input = raw_input
         self.reason = reason
-        super().__init__(f"Cannot parse '{raw_input}': {reason}")
+        super().__init__(f"Er is iets mis met je invoer '{raw_input}': {reason}")
  
 def _preprocess(text: str) -> str:
     """Clean up student input into something SymPy can handle."""
@@ -65,6 +65,8 @@ def parse_expr_safe(text: str) -> Expr:
     Returns a SymPy Expr.
     Raises ParseError on failure.
     """
+    if text == '':
+        raise ParseError(text, f"aan beide kanten van het = teken moet iets staan.")
     preprocessed = _preprocess(text)
     try:
         expr = parse_expr(preprocessed, transformations=_TRANSFORMS, local_dict={'x': x}, evaluate=False)
@@ -82,11 +84,11 @@ def parse_equation(text: str) -> Eq:
     """
     # Handle == as well
     text = text.replace('==', '=')
- 
+    
     parts = text.split('=')
     if len(parts) != 2:
-        raise ParseError(text, f"Expected exactly one '=' sign, found {len(parts)-1}")
- 
+        raise ParseError(text, f"in een vergelijking moet een = teken staan.")
+    
     lhs = parse_expr_safe(parts[0])
     rhs = parse_expr_safe(parts[1])
     return Eq(lhs, rhs)
@@ -125,5 +127,5 @@ def parse_disjunction(text: str) -> List[Eq]:
     """
     parts = _DISJUNCTION_RE.split(text)
     if len(parts) < 2:
-        raise ParseError(text, "No disjunction separator found")
+        raise ParseError(text, "er mist een of-teken in je antwoord.")
     return [parse_equation(part.strip()) for part in parts]

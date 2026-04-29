@@ -91,7 +91,7 @@ def parse_equation(text: str) -> Eq:
     
     lhs = parse_expr_safe(parts[0])
     rhs = parse_expr_safe(parts[1])
-    return Eq(lhs, rhs)
+    return Eq(lhs, rhs, evaluate=False)
  
  
 def parse_student_input(text: str) -> Union[Eq, Expr]:

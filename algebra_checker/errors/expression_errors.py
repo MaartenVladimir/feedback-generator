@@ -64,11 +64,66 @@ def _check_wrong_sign_x(prev_expr, new_expr) -> str | None:
                     f"Let op het minteken! "
                     f"Je hebt de {var}-termen bij elkaar opgeteld zonder rekening te "
                     f"houden met het minteken. "
-                    f"De correcte som is {correct_coeff}{var}, niet {wrong_coeff}{var}."
+                    f"Het moet {correct_coeff}{var} zijn, niet {wrong_coeff}{var}."
                 )
         except Exception:
             pass
     return None
+
+def _check_add_unlike_terms(prev_expr, new_expr) -> str | None:
+    # Phase 1: step is correct → nothing to report
+    if simplify(prev_expr - new_expr) == 0:
+        return None
+
+    all_vars = prev_expr.free_symbols | new_expr.free_symbols
+
+    def coeff_map(expr):
+        m = {}
+        for var in all_vars:
+            coeffs = _var_coefficients(expr, var)
+            m[var] = sum(coeffs) if coeffs else S.Zero
+        consts = _const_terms(expr)
+        m[None] = sum(consts) if consts else S.Zero
+        return m
+
+    prev_map = coeff_map(prev_expr)
+    new_map  = coeff_map(new_expr)
+
+    all_keys = list(all_vars) + [None]
+    delta = {k: new_map[k] - prev_map[k] for k in all_keys}
+
+    # Non-numeric deltas (e.g. student wrote a non-linear term like 7*x*y)
+    # mean this checker doesn't apply.
+    if not all(v.is_number for v in delta.values()):
+        return None
+
+    gained = {k: v for k, v in delta.items() if v > 0}
+    lost   = {k: v for k, v in delta.items() if v < 0}
+
+    if not gained or not lost:
+        return None
+
+    # Phase 2: find unlike-term transfers and build feedback
+    def fmt(key, coeff):
+        return str(coeff) if key is None else f"{coeff}{key}"
+
+    messages = []
+    for sink, gain in gained.items():
+        for source, loss in lost.items():
+            if sink == source:
+                continue
+            if simplify(gain + loss) != 0:
+                continue
+            source_term = fmt(source, prev_map[source])
+            sink_orig   = fmt(sink,   prev_map[sink])
+            sink_wrong  = fmt(sink,   new_map[sink])
+            messages.append(
+                f"Je hebt {sink_orig} en {source_term} bij elkaar opgeteld, "
+                f"maar dat zijn ongelijksoortige termen. "
+                f"{sink_orig} + {source_term} kan niet worden geschreven als {sink_wrong}."
+            )
+
+    return " ".join(messages) if messages else None
 
 
 def _check_wrong_sign_const(prev_expr, new_expr) -> str | None:
@@ -113,8 +168,8 @@ def _check_wrong_sign_const(prev_expr, new_expr) -> str | None:
             wrong = correct_const - 2 * c   # flip the sign of term c
             if simplify(new_const - wrong) == 0:
                 return (
-                    f"Let op het teken bij de getallen! "
-                    f"De correcte som van de losse getallen is {correct_const}, "
+                    f"Let op het minteken bij de getallen! "
+                    f"het moet {correct_const} zijn, "
                     f"niet {wrong}."
                 )
     except Exception:
@@ -129,8 +184,7 @@ def _check_wrong_sign_const(prev_expr, new_expr) -> str | None:
 wrong_sign_combining_x = ErrorChecker(
     id="wrong_sign_combining_x",
     description=(
-        "Student dropped a minus sign when combining x-terms "
-        "(treated subtraction as addition)."
+        "Leerling wisselt - en + om bij een variabele"
     ),
     check=_check_wrong_sign_x,
 )
@@ -138,7 +192,17 @@ wrong_sign_combining_x = ErrorChecker(
 wrong_sign_combining_const = ErrorChecker(
     id="wrong_sign_combining_const",
     description=(
-        "Student flipped the sign of a constant term when combining constants."
+        "Leerling wisselt - en + om bij een constante."
     ),
     check=_check_wrong_sign_const,
 )
+
+wrong_unlike_term_addition = ErrorChecker(
+    id="wrong_unlike_term_addition",
+    description=(
+        "Leerling heeft verschillende variabelen, of variabelen en constanten opgeteld."
+    ),
+    check=_check_add_unlike_terms,
+)
+
+

@@ -7,5 +7,5 @@
   "new_template": "X = (b-a)",
   "computed": {"correct_rhs": "b/a", "incorrect_rhs": "b - a"},
   "description": "Student substracts a coefficient, instead of dividing it.",
-  "message": "Als er een getal voor een variable staat, dan staat er eigenlijk een vermenigvuldigingsteken, je kan dat getal dus alleen weghalen door te delen! Het wordt dan {correct_rhs} en niet {incorrect_rhs}."
+  "message": "Als er een getal voor een variable of voor een haakje staat, dan staat er eigenlijk een vermenigvuldigingsteken, je kan dat getal dus alleen weghalen door te delen! Het wordt dan {correct_rhs} en niet {incorrect_rhs}."
 }

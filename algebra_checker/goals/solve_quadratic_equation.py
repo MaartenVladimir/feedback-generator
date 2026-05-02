@@ -71,6 +71,23 @@ class SolveQuadraticEquationGoal(Goal):
         r"\end{array}"
     )
 
+    @classmethod
+    def get_expected_answer(cls, item: dict) -> str | None:
+        try:
+            eq = parse_equation(item['sympy_str'])
+            sols = solve(eq, x)
+            if not sols:
+                return None
+            try:
+                sols_sorted = sorted(sols, key=float)
+            except Exception:
+                sols_sorted = sols
+            if len(sols_sorted) == 1:
+                return f'x = {cls.latex_expr(sols_sorted[0])}'
+            return r' \vee '.join(f'x = {cls.latex_expr(s)}' for s in sols_sorted)
+        except Exception:
+            return None
+
     @property
     def description(self) -> str:
         return "Los de kwadratische vergelijking op."

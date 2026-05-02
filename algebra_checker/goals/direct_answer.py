@@ -45,6 +45,20 @@ class DirectAnswerGoal(Goal):
         r"\end{array}"
     )
 
+    @classmethod
+    def get_expected_answer(cls, item: dict) -> str | None:
+        display = item.get('expected_answer_display')
+        if display:
+            return display
+        raw = item.get('expected_answer', '').strip()
+        if not raw:
+            return None
+        try:
+            from sympy import simplify
+            return cls.latex_expr(simplify(parse_expr_safe(raw)))
+        except Exception:
+            return raw
+
     @property
     def description(self) -> str:
         return "Vul het juiste antwoord in."

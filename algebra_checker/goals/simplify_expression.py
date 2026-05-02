@@ -30,7 +30,7 @@ Error detection
 Wrong sign when combining x-terms or constant terms (see expression_errors.py).
 """
 
-from sympy import Add, expand, simplify as sym_simplify, Symbol, Pow
+from sympy import Add, expand, simplify as sym_simplify, Symbol, Pow, latex as sym_latex
 
 from ..parser import ParseError, parse_equation, parse_expr_safe
 from ..validator import StepResult, StepStatus
@@ -58,6 +58,8 @@ _MSG_NO_PROGRESS = (
 def _term_count(expr) -> int:
     """Number of top-level additive terms in an expression."""
     return len(Add.make_args(expr))
+
+
 
 
 def _is_fully_simplified(expr) -> bool:
@@ -124,6 +126,30 @@ class SimplifyExpressionGoal(Goal):
         r"y = 9x - 6"
         r"\end{array}"
     )
+    selftest_input_hint = (
+        r"\begin{array}{l}"
+        r"\text{Voer alleen je antwoord in. Bijvoorbeeld:}\\[6pt]"
+        r"y = 2x + 1 \\ \\"
+        r"\text{of}\\ \\"
+        r"3q + 4 + 2f"
+        r"\end{array}"
+    )
+    @classmethod
+    def get_expected_answer(cls, item: dict) -> str | None:
+        try:
+            sympy_str = item['sympy_str']
+            if '=' in sympy_str.replace('==', ''):
+                # Form: y = expr
+                eq = parse_equation(sympy_str)
+                lhs = eq.lhs if eq.lhs.is_Symbol else eq.rhs
+                rhs = eq.rhs if eq.lhs.is_Symbol else eq.lhs
+                return f'{sym_latex(lhs)} = {cls.latex_expr(sym_simplify(expand(rhs)))}'
+            else:
+                # Form: expr
+                expr = parse_expr_safe(sympy_str)
+                return cls.latex_expr(sym_simplify(expand(expr)))
+        except Exception:
+            return None
 
     @property
     def description(self) -> str:

@@ -22,6 +22,8 @@ string (e.g. "partial_multiplication") per error type in the system logs.
 from abc import ABC, abstractmethod
 from typing import Optional
 
+from sympy import Add, Rational, latex as _sym_latex
+
 from ..validator import StepResult
 from ..errors.base import ErrorChecker
 
@@ -56,6 +58,34 @@ class Goal(ABC):
 
     default_error_checks: list[ErrorChecker] = []
     input_hint: str | None = None
+    selftest_input_hint: str | None = None
+
+    @staticmethod
+    def latex_expr(expr) -> str:
+        "Render a SymPy expression to LaTeX, keeping rational coefficients as a fraction. (Students dont know variable in numerator notation)"
+        def _fmt_term(term) -> str:
+            coeff, rest = term.as_coeff_Mul()
+            if isinstance(coeff, Rational) and coeff.q != 1 and not rest.is_number:
+                return r'\frac{' + str(coeff.p) + '}{' + str(coeff.q) + '} ' + _sym_latex(rest)
+            return _sym_latex(term)
+
+        if not expr.is_Add:
+            return _fmt_term(expr)
+
+        result = ''
+        for i, term in enumerate(expr.as_ordered_terms()):
+            is_neg = term.as_coeff_Mul()[0].is_negative
+            s = _fmt_term(-term if is_neg else term)
+            if i == 0:
+                result = ('-' + s) if is_neg else s
+            else:
+                result += (' - ' + s) if is_neg else (' + ' + s)
+        return result
+
+    @classmethod
+    def get_expected_answer(cls, item: dict) -> str | None:
+        "Return a LaTeX string of the expected final answer, or None."
+        return None
 
     def __init__(
         self,

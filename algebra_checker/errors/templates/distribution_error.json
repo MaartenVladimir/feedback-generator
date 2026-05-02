@@ -6,5 +6,5 @@
   "new_template": "a*x + b = c",
   "computed": {"ab": "a*b"},
   "description": "Student removed brackets without multiplying the outer factor into all terms.",
-  "message": "When expanding {a}*(x+{b}) you must multiply every term inside by {a}. The result is {a}x + {ab} = {c}, not {a}x + {b} = {c}."
+  "message": "Als je bij de uitdrukking {a}*(x+{b}) de haakjes wilt wegwerken, dan moet je alles binnen de haakjes vermenigvuldigen met {a} you must multiply every term inside by {a}. Het moet dus worden: {a}x + {ab} = {c}, niet {a}x + {b} = {c}."
 }

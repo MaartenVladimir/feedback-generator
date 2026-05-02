@@ -109,14 +109,29 @@ def _check_add_unlike_terms(prev_expr, new_expr) -> str | None:
 
     messages = []
     for sink, gain in gained.items():
+        if sink is not None:
+            if any(simplify(c - new_map[sink]) == 0 for c in _var_coefficients(prev_expr, sink)):
+                continue
         for source, loss in lost.items():
             if sink == source:
                 continue
             if simplify(gain + loss) != 0:
                 continue
+            # Find the coefficients that gained unlike terms
+            ind_prev = (_var_coefficients(prev_expr, sink) if sink is not None
+                        else _const_terms(prev_expr))
+            ind_new  = (_var_coefficients(new_expr,  sink) if sink is not None
+                        else _const_terms(new_expr))
+            affected = next(
+                (c for c in ind_prev
+                 if any(simplify(c + gain - nj) == 0 for nj in ind_new)),
+                prev_map[sink],
+            )
+            wrong_coeff = simplify(affected + gain) if affected != prev_map[sink] else new_map[sink]
+
             source_term = fmt(source, prev_map[source])
-            sink_orig   = fmt(sink,   prev_map[sink])
-            sink_wrong  = fmt(sink,   new_map[sink])
+            sink_orig   = fmt(sink, affected)
+            sink_wrong  = fmt(sink, wrong_coeff)
             messages.append(
                 f"Je hebt {sink_orig} en {source_term} bij elkaar opgeteld, "
                 f"maar dat zijn ongelijksoortige termen. "
@@ -125,13 +140,27 @@ def _check_add_unlike_terms(prev_expr, new_expr) -> str | None:
 
     return " ".join(messages) if messages else None
 
+def _check_wrong_variable(prev_expr, new_expr) -> str | None:
+    prev_vars = prev_expr.free_symbols
+    new_vars  = new_expr.free_symbols
+    introduced = new_vars - prev_vars
+    dropped    = prev_vars - new_vars
+    if len(introduced) == 1 and len(dropped) == 1:
+        new_var = next(iter(introduced))
+        old_var = next(iter(dropped))
+        return (
+            f"Je hebt variabele {new_var} gebruikt, "
+            f"maar de uitdrukking heeft {old_var} als variabele."
+        )
+    return None
+
 
 def _check_wrong_sign_const(prev_expr, new_expr) -> str | None:
     """
     Detect: student flipped the sign of one constant term when combining constants.
 
-    Example:  5x - 4 + 3  →  5x - 7   (correct: 5x - 1)
-              3x - 4 + 2x + 3  →  5x - 7   (correct: 5x - 1)
+    Example:  5x - 4 + 3,  5x - 7   (correct: 5x - 1)
+              3x - 4 + 2x + 3 , 5x - 7   (correct: 5x - 1)
 
     Phase 1 — Pattern match:
       - There are at least two constant (non-x) terms in prev.
@@ -153,7 +182,7 @@ def _check_wrong_sign_const(prev_expr, new_expr) -> str | None:
     if not (has_neg and has_pos):
         return None  # All same sign — no sign confusion
 
-    correct_const = sum(numeric_consts)
+    correct_const = simplify(sum(numeric_consts))
 
     # Phase 2
     try:
@@ -163,10 +192,14 @@ def _check_wrong_sign_const(prev_expr, new_expr) -> str | None:
             S.Zero  # identity element for sum
         )
 
-        # Check every single-flip scenario
+        # Check flip scenarios
         for c in numeric_consts:
-            wrong = correct_const - 2 * c   # flip the sign of term c
+            wrong = simplify(correct_const - 2 * c)   # flip the sign of term c
             if simplify(new_const - wrong) == 0:
+                if not prev_expr.free_symbols:
+                    return (
+                        "Let op! Er klopt een minteken niet."
+                    )
                 return (
                     f"Let op het minteken bij de getallen! "
                     f"het moet {correct_const} zijn, "
@@ -181,6 +214,13 @@ def _check_wrong_sign_const(prev_expr, new_expr) -> str | None:
 # Exported ErrorChecker instances
 # ---------------------------------------------------------------------------
 
+wrong_variable = ErrorChecker(
+    id="wrong_variable",
+    description=(
+        "Leerling introduceerd niet bestaande variabele"
+    ),
+    check=_check_wrong_variable,
+)
 wrong_sign_combining_x = ErrorChecker(
     id="wrong_sign_combining_x",
     description=(

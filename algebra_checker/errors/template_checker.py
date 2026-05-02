@@ -194,7 +194,7 @@ def _make_wilds(scalar_names: list, expr_names: list) -> dict:
     """
     wilds = {}
     for name in scalar_names:
-        wilds[name] = Wild(name, exclude=[x])
+        wilds[name] = Wild(name, properties=[lambda t: t.is_number])
     for name in expr_names:
         wilds[name] = Wild(name)
     return wilds

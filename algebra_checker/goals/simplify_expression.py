@@ -35,7 +35,7 @@ from sympy import Add, expand, simplify as sym_simplify, Symbol, Pow, latex as s
 from ..parser import ParseError, parse_equation, parse_expr_safe
 from ..validator import StepResult, StepStatus
 from .base import Goal
-from ..errors.expression_errors import wrong_sign_combining_x, wrong_sign_combining_const, wrong_unlike_term_addition
+from ..errors.expression_errors import wrong_variable, wrong_sign_combining_x, wrong_sign_combining_const, wrong_unlike_term_addition
 from ..validator import _expressions_equivalent   # shared equivalence helper
 
 
@@ -97,10 +97,8 @@ def _extract_rhs(eq, raw: str):
 
 def _parse_step(raw: str):
     """Parse a step as either 'y = expr' or a bare expression."""
-    print(raw)
     if '=' in raw.replace('==', ''):
         eq = parse_equation(raw)
-        print(eq)
         return _extract_rhs(eq, raw)
     return parse_expr_safe(raw)
 
@@ -118,7 +116,7 @@ class SimplifyExpressionGoal(Goal):
     Students enter each simplification step in the same format.
     """
 
-    default_error_checks = [wrong_sign_combining_x, wrong_sign_combining_const, wrong_unlike_term_addition]
+    default_error_checks = [wrong_variable, wrong_sign_combining_x, wrong_sign_combining_const, wrong_unlike_term_addition]
     input_hint = (
         r"\begin{array}{l}"
         r"\text{Voer elke stap in.}\\[6pt]"

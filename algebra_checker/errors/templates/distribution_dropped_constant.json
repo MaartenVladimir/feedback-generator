@@ -1,0 +1,10 @@
+{
+  "id": "distribution_dropped_constant",
+  "type": "error",
+  "params": ["a", "b", "c"],
+  "prev_template": "a*(x+b) = c",
+  "new_template": "a*x = c - b",
+  "computed": {"ab": "a*b", "correct_rhs": "c - a*b"},
+  "description": "Student opened brackets without multiplying the factor, moved constant to other side.",
+  "message": "Als er haakjes in je vergelijking staan, dan moeten die eerst weg voordat je beide kanten min {b} doet."
+}

@@ -283,7 +283,9 @@ def instantiate_item(item: dict, student_id: str) -> dict:
         result["context"] = ' '.join(_render(c, values) for c in ctx) if isinstance(ctx, list) else _render(ctx, values)
 
     if "display" in item:
-        result["display"] = _render(item["display"], values)
+        display = item["display"]
+        result["display"] =  ' '.join(_render(c, values) for c in display) if isinstance(display, list) else _render(display, values)
+        
     if "sympy_str" in item:
         result["sympy_str"] = _render(item["sympy_str"], values)
 

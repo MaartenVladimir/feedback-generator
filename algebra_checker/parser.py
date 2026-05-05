@@ -34,6 +34,9 @@ def _preprocess(text: str) -> str:
     # Replace common unicode / typography
     s = s.replace('×', '*').replace('·', '*').replace('−', '-')
     s = s.replace('^', '**')
+
+    # Decimal comma: 1,5 → 1.5  (only between digits, leaves f(a,b) intact)
+    s = re.sub(r'(\d),(\d)', r'\1.\2', s)
  
     # Replace ² and ³ with **2 and **3
     s = s.replace('²', '**2').replace('³', '**3')

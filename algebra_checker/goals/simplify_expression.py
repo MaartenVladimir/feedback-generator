@@ -41,7 +41,7 @@ from ..validator import _expressions_equivalent   # shared equivalence helper
 
 _FALLBACK_INCORRECT = (
     "Deze stap is niet correct. "
-    "Controleer de tekens en de berekening bij het samenvoegen."
+    "Controleer je stap."
 )
 _MSG_CORRECT   = "Correct!"
 _MSG_COMPLETE  = "Correct! De uitdrukking is volledig herleid."

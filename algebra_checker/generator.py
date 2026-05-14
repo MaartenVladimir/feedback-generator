@@ -201,7 +201,7 @@ def _render_value(val: Any, values: dict[str, Any]) -> Any:
 _TERM_AFTER_SIGN = re.compile(r"[+\-]\s*\{\{\w+:term\}\}")
 
 
-def _render(template: str, values: dict[str, Any]) -> str:
+def _render(template: str, values: dict[str, Any], sympy_mode: bool = False) -> str:
     """
     Replace {{param}} and {{param:modifier}} placeholders.
 
@@ -216,6 +216,10 @@ def _render(template: str, values: dict[str, Any]) -> str:
              otherwise the plain integer string
 
     Leading constants: use raw {{b}} — renders as -2 or 2, never +2
+
+    sympy_mode: when True, negative raw values are wrapped in parentheses so
+                that e.g. -{{a}}**3 with a=-1 becomes -(-1)**3 instead of --1**3.
+                Use for sympy_str, expected_answer, and if_answer fields.
     """
     if _TERM_AFTER_SIGN.search(template):
         raise ValueError(
@@ -246,7 +250,10 @@ def _render(template: str, values: dict[str, Any]) -> str:
                 return f"+ {latex(abs_val)}" if not is_negative else f"- {latex(abs_val)}"
             val = str(int(abs_val) if abs_val == int(abs_val) else abs_val)
             return f"+ {val}" if not is_negative else f"- {val}"
-        # Default: raw value
+        # Default: raw value — wrap negatives in parens when rendering for SymPy
+        # to avoid e.g. -{{a}}**3 with a=-1 producing --1**3 instead of -(-1)**3.
+        if sympy_mode and is_negative:
+            return f"({val})"
         return str(val)
 
     return _PLACEHOLDER.sub(replace, template)
@@ -287,14 +294,14 @@ def instantiate_item(item: dict, student_id: str) -> dict:
         result["display"] =  ' '.join(_render(c, values) for c in display) if isinstance(display, list) else _render(display, values)
         
     if "sympy_str" in item:
-        result["sympy_str"] = _render(item["sympy_str"], values)
+        result["sympy_str"] = _render(item["sympy_str"], values, sympy_mode=True)
 
     if "expected_answer" in item:
-        result["expected_answer"] = _render(item["expected_answer"], values)
+        result["expected_answer"] = _render(item["expected_answer"], values, sympy_mode=True)
 
     if "wrong_answer_hints" in item:
         result["wrong_answer_hints"] = [
-            {**hint, "if_answer": _render(hint["if_answer"], values)} if "if_answer" in hint else hint
+            {**hint, "if_answer": _render(hint["if_answer"], values, sympy_mode=True)} if "if_answer" in hint else hint
             for hint in item["wrong_answer_hints"]
         ]
 
@@ -306,12 +313,12 @@ def instantiate_item(item: dict, student_id: str) -> dict:
         for part in item["parts"]:
             rendered_part = dict(part)
             rendered_part["display"] = _render(part["display"], values)
-            rendered_part["sympy_str"] = _render(part["sympy_str"], values)
+            rendered_part["sympy_str"] = _render(part["sympy_str"], values, sympy_mode=True)
             if "expected_answer" in part:
-                rendered_part["expected_answer"] = _render(part["expected_answer"], values)
+                rendered_part["expected_answer"] = _render(part["expected_answer"], values, sympy_mode=True)
             if "wrong_answer_hints" in part:
                 rendered_part["wrong_answer_hints"] = [
-                    {**hint, "if_answer": _render(hint["if_answer"], values)} if "if_answer" in hint else hint
+                    {**hint, "if_answer": _render(hint["if_answer"], values, sympy_mode=True)} if "if_answer" in hint else hint
                     for hint in part["wrong_answer_hints"]
                 ]
             rendered_parts.append(rendered_part)

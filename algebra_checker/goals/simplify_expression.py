@@ -67,12 +67,15 @@ def _is_fully_simplified(expr) -> bool:
     True when the expression contains no combinable like terms and no
     unevaluated numeric operations.
 
-    For symbolic expressions: done when expand() produces the same number
-    of terms (no like terms left to combine).
+    For symbolic expressions: done when fully reducing (expand + re-evaluate)
+    produces the same number of terms. expand() alone distributes products but
+    does NOT combine multivariate like terms (e.g. 20a^4b^3 + 5a^4b^3 stays
+    as 2 terms after expand). The Add(*...) call forces like-term combination.
     For purely numeric expressions: done only when the result is an atomic
     number — e.g. 9 is done, but (7-4)**2 or 3**2 or 36-3 are not.
     """
-    if _term_count(expr) != _term_count(expand(expr)):
+    fully_reduced = Add(*Add.make_args(expand(expr)))
+    if _term_count(expr) != _term_count(fully_reduced):
         return False
     if expr.is_number:
         if _term_count(expr) > 1:  # unevaluated sum like 3 + 12

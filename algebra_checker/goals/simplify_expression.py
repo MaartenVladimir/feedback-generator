@@ -35,7 +35,13 @@ from sympy import Add, expand, simplify as sym_simplify, Symbol, Pow, latex as s
 from ..parser import ParseError, parse_equation, parse_expr_safe
 from ..validator import StepResult, StepStatus
 from .base import Goal
-from ..errors.expression_errors import wrong_variable, wrong_sign_combining_x, wrong_sign_combining_const, wrong_unlike_term_addition
+from ..errors.expression_errors import (
+    wrong_variable,
+    wrong_sign_combining_x,
+    wrong_sign_combining_const,
+    wrong_unlike_term_addition,
+    sign_error_in_product_of_negatives,
+)
 from ..validator import _expressions_equivalent   # shared equivalence helper
 
 
@@ -119,7 +125,13 @@ class SimplifyExpressionGoal(Goal):
     Students enter each simplification step in the same format.
     """
 
-    default_error_checks = [wrong_variable, wrong_sign_combining_x, wrong_sign_combining_const, wrong_unlike_term_addition]
+    default_error_checks = [
+        wrong_variable,
+        wrong_sign_combining_x,
+        wrong_sign_combining_const,
+        sign_error_in_product_of_negatives,
+        wrong_unlike_term_addition,
+    ]
     input_hint = (
         r"\begin{array}{l}"
         r"\text{Voer elke stap in.}\\[6pt]"

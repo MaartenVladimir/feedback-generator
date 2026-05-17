@@ -14,7 +14,7 @@ Two-phase structure (same as equation_errors.py):
   Phase 2 — Diagnosis: produce a specific Dutch-language feedback message.
 """
 
-from sympy import Add, expand, simplify
+from sympy import Add, Mul, Pow, expand, simplify
 from .base import ErrorChecker
 from sympy import S
 
@@ -210,6 +210,52 @@ def _check_wrong_sign_const(prev_expr, new_expr) -> str | None:
     return None
 
 
+def _check_sign_error_in_product_of_negatives(prev_expr, new_expr) -> str | None:
+    """
+    Detects if student multiplies factors that include an even number of negatives
+    but writes a negative result.
+    """
+    # Phase 1a: step must be incorrect
+    if simplify(prev_expr - new_expr) == 0:
+        return None
+
+    # Prev must be a single product 
+    if len(Add.make_args(prev_expr)) > 1:
+        return None
+
+    # the correct simplified result must also be a single term
+    correct = expand(prev_expr)
+    if len(Add.make_args(correct)) != 1:
+        return None
+
+    # the correct result must have a positive numeric coefficient
+    correct_coeff = correct.as_coeff_Mul()[0]
+    if not (correct_coeff.is_number and correct_coeff > 0):
+        return None
+
+    # new must be exactly the negation of the correct result
+    if simplify(correct + new_expr) != 0:
+        return None
+
+    # prev must visibly contain at least 2 negative numeric factors
+    neg_factors = [f for f in Mul.make_args(prev_expr) if f.is_number and f < 0]
+    if len(neg_factors) < 2:
+        return None
+
+    # build feedback
+    if len(neg_factors) == 2:
+        a, b = neg_factors
+        return (
+            f"Let op de tekens! "
+            f"Min keer min is plus! "
+            f"{a} × {b} = {a * b}. "
+            f"Het resultaat is positief, niet negatief."
+        )
+    return (
+        f"Let op de mintekens! "
+        f"Het resultaat is positief, niet negatief."
+    )
+
 # ---------------------------------------------------------------------------
 # Exported ErrorChecker instances
 # ---------------------------------------------------------------------------
@@ -245,4 +291,11 @@ wrong_unlike_term_addition = ErrorChecker(
     check=_check_add_unlike_terms,
 )
 
+sign_error_in_product_of_negatives = ErrorChecker(
+    id="sign_error_in_product_of_negatives",
+    description=(
+        "Leerling vergeet dat min keer min is plus"
+    ),
+    check=_check_sign_error_in_product_of_negatives,
+)
 

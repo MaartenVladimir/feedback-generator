@@ -30,7 +30,7 @@ Error detection
 Wrong sign when combining x-terms or constant terms (see expression_errors.py).
 """
 
-from sympy import Add, expand, simplify as sym_simplify, Symbol, Pow, latex as sym_latex
+from sympy import Add, Mul, expand, simplify as sym_simplify, Pow, latex as sym_latex
 
 from ..parser import ParseError, parse_equation, parse_expr_safe
 from ..validator import StepResult, StepStatus
@@ -66,6 +66,14 @@ def _term_count(expr) -> int:
     return len(Add.make_args(expr))
 
 
+def _has_unexpanded_products(expr) -> bool:
+    """True if any top-level term is a product that still contains a sum. (Brackets that contain a sum)"""
+    for term in Add.make_args(expr):
+        if isinstance(term, Mul):
+            for factor in term.args:
+                if isinstance(factor, Add):
+                    return True
+    return False
 
 
 def _is_fully_simplified(expr) -> bool:
@@ -80,6 +88,8 @@ def _is_fully_simplified(expr) -> bool:
     For purely numeric expressions: done only when the result is an atomic
     number — e.g. 9 is done, but (7-4)**2 or 3**2 or 36-3 are not.
     """
+    if _has_unexpanded_products(expr):
+        return False
     fully_reduced = Add(*Add.make_args(expand(expr)))
     if _term_count(expr) != _term_count(fully_reduced):
         return False

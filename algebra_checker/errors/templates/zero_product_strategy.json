@@ -7,5 +7,5 @@
   "new_template": "x**2 + (a+b)*x + a*b = 0",
   "computed": {"neg_a": "-a", "neg_b": "-b"},
   "description": "Student expanded a zero-product equation instead of reading off the roots directly.",
-  "message": "This step is correct, but expanding makes the problem harder. The equation has the form (x+{a})\u00b7(x+{b}) = 0, so at least one factor must be zero. You can read off x = {neg_a} and x = {neg_b} directly without expanding."
+  "message": "Deze stap is correct, maar wegwerken van de haakjes maakt de vergelijking moeilijker. De vergelijking heeft de vorm (x+{a})\u00b7(x+{b}) = 0, dus minstens één factor moet nul zijn. Je kunt direct aflezen dat x = {neg_a} en x = {neg_b} zonder uit te werken."
 }

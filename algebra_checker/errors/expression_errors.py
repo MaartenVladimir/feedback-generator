@@ -14,7 +14,7 @@ Two-phase structure (same as equation_errors.py):
   Phase 2 — Diagnosis: produce a specific Dutch-language feedback message.
 """
 
-from sympy import Add, Mul, Pow, expand, simplify
+from sympy import Add, Mul, Pow, expand, simplify, latex as _sym_latex
 from .base import ErrorChecker
 from sympy import S
 
@@ -75,25 +75,49 @@ def _check_add_unlike_terms(prev_expr, new_expr) -> str | None:
     if simplify(prev_expr - new_expr) == 0:
         return None
 
-    all_vars = prev_expr.free_symbols | new_expr.free_symbols
+    def _eval_term(term):
+        # Re-evaluate a single product to flatten nested Mul structures that
+        # evaluate=False parsing can create (e.g. Mul(-1, Mul(5, p**2))).
+        if isinstance(term, Mul):
+            return Mul(*term.args)
+        return term
 
-    def coeff_map(expr):
+    def split(term):
+        return _eval_term(term).as_coeff_Mul()
+
+    def monom_coeffs(expr):
+        """Sum of numeric coefficients per monomial key.
+        Works for any polynomial: x, p**2, p*q, constants, etc."""
         m = {}
-        for var in all_vars:
-            coeffs = _var_coefficients(expr, var)
-            m[var] = sum(coeffs) if coeffs else S.Zero
-        consts = _const_terms(expr)
-        m[None] = sum(consts) if consts else S.Zero
+        for term in Add.make_args(expr):
+            coeff, monom = split(term)
+            m[monom] = m.get(monom, S.Zero) + coeff
         return m
 
-    prev_map = coeff_map(prev_expr)
-    new_map  = coeff_map(new_expr)
+    def individual_coeffs(expr, monom_key):
+        """Individual (unevaluated) numeric coefficients for one monomial key."""
+        return [split(term)[0]
+                for term in Add.make_args(expr)
+                if split(term)[1] == monom_key]
 
-    all_keys = list(all_vars) + [None]
-    delta = {k: new_map[k] - prev_map[k] for k in all_keys}
+    prev_map = monom_coeffs(prev_expr)
+    new_map  = monom_coeffs(new_expr)
 
-    # Non-numeric deltas (e.g. student wrote a non-linear term like 7*x*y)
-    # mean this checker doesn't apply.
+    def _has_bracket(monom):
+        """True when monom is or contains an unevaluated sum — i.e. unexpanded brackets."""
+        if isinstance(monom, Add):
+            return True
+        if hasattr(monom, 'args'):
+            return any(isinstance(a, Add) for a in monom.args)
+        return False
+
+    # This checker should not fire on expressions with unexpanded brackets.
+    if any(_has_bracket(k) for k in prev_map) or any(_has_bracket(k) for k in new_map):
+        return None
+
+    all_keys = set(prev_map) | set(new_map)
+    delta = {k: new_map.get(k, S.Zero) - prev_map.get(k, S.Zero) for k in all_keys}
+
     if not all(v.is_number for v in delta.values()):
         return None
 
@@ -104,38 +128,51 @@ def _check_add_unlike_terms(prev_expr, new_expr) -> str | None:
         return None
 
     # Phase 2: find unlike-term transfers and build feedback
-    def fmt(key, coeff):
-        return str(coeff) if key is None else f"{coeff}{key}"
+    def lx(monom, coeff):
+        val = coeff if monom == S.One else coeff * monom
+        return r'\(' + _sym_latex(val) + r'\)'
 
     messages = []
     for sink, gain in gained.items():
-        if sink is not None:
-            if any(simplify(c - new_map[sink]) == 0 for c in _var_coefficients(prev_expr, sink)):
+        # Skip if a literal term already at the new total existed in prev
+        if sink != S.One:
+            if any(simplify(c - new_map.get(sink, S.Zero)) == 0
+                   for c in individual_coeffs(prev_expr, sink)):
                 continue
         for source, loss in lost.items():
             if sink == source:
                 continue
             if simplify(gain + loss) != 0:
                 continue
-            # Find the coefficients that gained unlike terms
-            ind_prev = (_var_coefficients(prev_expr, sink) if sink is not None
-                        else _const_terms(prev_expr))
-            ind_new  = (_var_coefficients(new_expr,  sink) if sink is not None
-                        else _const_terms(new_expr))
-            affected = next(
-                (c for c in ind_prev
-                 if any(simplify(c + gain - nj) == 0 for nj in ind_new)),
-                prev_map[sink],
-            )
-            wrong_coeff = simplify(affected + gain) if affected != prev_map[sink] else new_map[sink]
 
-            source_term = fmt(source, prev_map[source])
-            sink_orig   = fmt(sink, affected)
-            sink_wrong  = fmt(sink, wrong_coeff)
+            if new_map.get(sink, S.Zero) == S.Zero:
+                true_sink, true_source, true_gain = source, sink, loss
+            else:
+                true_sink, true_source, true_gain = sink, source, gain
+
+            ts_ind_prev = individual_coeffs(prev_expr, true_sink)
+            ts_ind_new  = individual_coeffs(new_expr,  true_sink)
+            ts_prev     = prev_map.get(true_sink, S.Zero)
+            ts_new      = new_map.get(true_sink, S.Zero)
+
+            affected = next(
+                (c for c in ts_ind_prev
+                 if any(simplify(c + true_gain - nj) == 0 for nj in ts_ind_new)),
+                ts_prev,
+            )
+            wrong_coeff = simplify(affected + true_gain) if affected != ts_prev else ts_new
+
+            sink_val   = affected if true_sink   == S.One else affected   * true_sink
+            source_val = true_gain if true_source == S.One else true_gain * true_source
+
+            source_term = lx(true_source, true_gain)
+            sink_orig   = lx(true_sink,   affected)
+            sink_wrong  = lx(true_sink,   wrong_coeff)
+            addition    = r'\(' + _sym_latex(sink_val + source_val) + r'\)'
             messages.append(
                 f"Je hebt {sink_orig} en {source_term} bij elkaar opgeteld, "
                 f"maar dat zijn ongelijksoortige termen. "
-                f"{sink_orig} + {source_term} kan niet worden geschreven als {sink_wrong}."
+                f"{addition} kan niet worden geschreven als {sink_wrong}."
             )
 
     return " ".join(messages) if messages else None

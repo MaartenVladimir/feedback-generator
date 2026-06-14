@@ -35,10 +35,12 @@ def _subexpr_is_irreducible(f) -> bool:
         return True
     if isinstance(f, Pow):
         return _subexpr_is_irreducible(f.base)
+    if isinstance(f, Mul):
+        # e.g. -a**2 parsed as Mul(-1, a**2) is actually irreducible, if all parts are.
+        return all(_subexpr_is_irreducible(g) for g in f.args)
     if isinstance(f, Add):
         # An Add is irreducible iff factor() gives back an Add (not a Mul).
         return isinstance(factor(f), Add)
-    # Mul or other: expand and re-factor; irreducible if result is an Add.
     return isinstance(factor(expand(f)), Add)
 
 

@@ -1,5 +1,5 @@
 {
-  "id": "lineq_divide_instead_multiply",
+  "id": "lineq_divison_wrong_order",
   "type": "error",
   "scalar_params": ["a", "b"],
   "expr_params": ["X"],
